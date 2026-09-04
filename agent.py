@@ -17,6 +17,85 @@ PIECE_VALUE = {
     chess.ROOK: 500,
     chess.QUEEN: 900,
 }
+# Tables are indexed from a1 to h8 and mirrored for Black. Values are centipawns.
+PST = {
+    chess.PAWN: (
+        0, 0, 0, 0, 0, 0, 0, 0,
+        50, 50, 50, 50, 50, 50, 50, 50,
+        10, 10, 20, 30, 30, 20, 10, 10,
+        5, 5, 10, 25, 25, 10, 5, 5,
+        0, 0, 0, 20, 20, 0, 0, 0,
+        5, -5, -10, 0, 0, -10, -5, 5,
+        5, 10, 10, -20, -20, 10, 10, 5,
+        0, 0, 0, 0, 0, 0, 0, 0,
+    ),
+    chess.KNIGHT: (
+        -50, -40, -30, -30, -30, -30, -40, -50,
+        -40, -20, 0, 5, 5, 0, -20, -40,
+        -30, 5, 10, 15, 15, 10, 5, -30,
+        -30, 0, 15, 20, 20, 15, 0, -30,
+        -30, 5, 15, 20, 20, 15, 5, -30,
+        -30, 0, 10, 15, 15, 10, 0, -30,
+        -40, -20, 0, 0, 0, 0, -20, -40,
+        -50, -40, -30, -30, -30, -30, -40, -50,
+    ),
+    chess.BISHOP: (
+        -20, -10, -10, -10, -10, -10, -10, -20,
+        -10, 5, 0, 0, 0, 0, 5, -10,
+        -10, 10, 10, 10, 10, 10, 10, -10,
+        -10, 0, 10, 10, 10, 10, 0, -10,
+        -10, 5, 5, 10, 10, 5, 5, -10,
+        -10, 0, 5, 10, 10, 5, 0, -10,
+        -10, 0, 0, 0, 0, 0, 0, -10,
+        -20, -10, -10, -10, -10, -10, -10, -20,
+    ),
+    chess.ROOK: (
+        0, 0, 0, 5, 5, 0, 0, 0,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        -5, 0, 0, 0, 0, 0, 0, -5,
+        5, 10, 10, 10, 10, 10, 10, 5,
+        0, 0, 0, 0, 0, 0, 0, 0,
+    ),
+    chess.QUEEN: (
+        -20, -10, -10, 0, 0, -10, -10, -20,
+        -10, 0, 0, 0, 0, 0, 0, -10,
+        -10, 0, 5, 5, 5, 5, 0, -10,
+        0, 0, 5, 5, 5, 5, 0, -5,
+        -5, 0, 5, 5, 5, 5, 0, -5,
+        -10, 5, 5, 5, 5, 5, 0, -10,
+        -10, 0, 5, 0, 0, 0, 0, -10,
+        -20, -10, -10, 0, 0, -10, -10, -20,
+    ),
+}
+KING_MG = (
+    -30, -40, -40, -50, -50, -40, -40, -30,
+    -30, -40, -40, -50, -50, -40, -40, -30,
+    -30, -40, -40, -50, -50, -40, -40, -30,
+    -30, -40, -40, -50, -50, -40, -40, -30,
+    -20, -30, -30, -40, -40, -30, -30, -20,
+    -10, -20, -20, -20, -20, -20, -20, -10,
+    20, 20, 0, 0, 0, 0, 20, 20,
+    20, 30, 10, 0, 0, 10, 30, 20,
+)
+KING_EG = (
+    -50, -30, -30, -30, -30, -30, -30, -50,
+    -30, -20, -10, 0, 0, -10, -20, -30,
+    -30, -10, 20, 30, 30, 20, -10, -30,
+    -30, -10, 30, 40, 40, 30, -10, -30,
+    -30, -10, 30, 40, 40, 30, -10, -30,
+    -30, -10, 20, 30, 30, 20, -10, -30,
+    -30, -20, -10, 0, 0, -10, -20, -30,
+    -50, -30, -30, -30, -30, -30, -30, -50,
+)
+PHASE_VALUE = {
+    chess.KNIGHT: 1,
+    chess.BISHOP: 1,
+    chess.ROOK: 2,
+    chess.QUEEN: 4,
+}
 MATE_SCORE = 1_000_000
 INF = MATE_SCORE + 1
 MAX_QUIET_DEPTH = 8
@@ -89,17 +168,90 @@ class Search:
             raise SearchTimeout
 
     def evaluate(self, board: chess.Board) -> int:
-        """Evaluate from the side-to-move perspective."""
+        """Evaluate from the side-to-move perspective in centipawns."""
         if board.is_checkmate():
             return -MATE_SCORE
         if board.is_stalemate() or board.is_insufficient_material():
             return 0
-        mover = board.turn
-        score = sum(
-            value * (len(board.pieces(piece, mover)) - len(board.pieces(piece, not mover)))
-            for piece, value in PIECE_VALUE.items()
+        phase = min(
+            24,
+            sum(
+                len(board.pieces(piece, color)) * value
+                for piece, value in PHASE_VALUE.items()
+                for color in chess.COLORS
+            ),
         )
-        return score + 4 * board.legal_moves.count()
+        score = 0
+        for color in chess.COLORS:
+            sign = 1 if color == chess.WHITE else -1
+            for piece, value in PIECE_VALUE.items():
+                squares = board.pieces(piece, color)
+                for square in squares:
+                    index = square if color == chess.WHITE else square ^ 56
+                    positional = PST[piece][index]
+                    score += sign * (value + positional)
+
+            pawns = board.pieces(chess.PAWN, color)
+            pawn_files = [0] * 8
+            for square in pawns:
+                pawn_files[chess.square_file(square)] += 1
+            for file, count in enumerate(pawn_files):
+                if count > 1:
+                    score -= sign * 12 * (count - 1)
+                if count and not any(
+                    pawn_files[neighbour]
+                    for neighbour in (file - 1, file + 1)
+                    if 0 <= neighbour < 8
+                ):
+                    score -= sign * 10
+            for square in pawns:
+                file = chess.square_file(square)
+                rank = chess.square_rank(square)
+                advance = rank if color == chess.WHITE else 7 - rank
+                enemy_pawns = board.pieces(chess.PAWN, not color)
+                passed = not any(
+                    abs(chess.square_file(enemy)) <= file + 1
+                    and abs(chess.square_file(enemy)) >= file - 1
+                    and (
+                        chess.square_rank(enemy) > rank
+                        if color == chess.WHITE
+                        else chess.square_rank(enemy) < rank
+                    )
+                    for enemy in enemy_pawns
+                )
+                if passed:
+                    score += sign * (20 + 8 * advance)
+
+            king = board.king(color)
+            if king is not None:
+                king_index = king if color == chess.WHITE else king ^ 56
+                king_score = (
+                    KING_MG[king_index] * phase + KING_EG[king_index] * (24 - phase)
+                ) // 24
+                score += sign * king_score
+                shelter_rank = chess.square_rank(king) + (1 if color == chess.WHITE else -1)
+                if 0 <= shelter_rank < 8:
+                    king_file = chess.square_file(king)
+                    for file in range(max(0, king_file - 1), min(8, king_file + 2)):
+                        if board.piece_at(chess.square(file, shelter_rank)) == chess.Piece(
+                            chess.PAWN, color
+                        ):
+                            score += sign * 8
+
+            if len(board.pieces(chess.BISHOP, color)) >= 2:
+                score += sign * 30
+            for square in board.pieces(chess.ROOK, color):
+                file = chess.square_file(square)
+                own_pawns = any(chess.square_file(pawn) == file for pawn in pawns)
+                enemy_pawns = any(
+                    chess.square_file(pawn) == file
+                    for pawn in board.pieces(chess.PAWN, not color)
+                )
+                if not own_pawns:
+                    score += sign * (6 if enemy_pawns else 12)
+
+        score += 4 * board.legal_moves.count()
+        return score if board.turn == chess.WHITE else -score
 
     def move_order(
         self, board: chess.Board, moves: list[chess.Move], tt_move: chess.Move | None

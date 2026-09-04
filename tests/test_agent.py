@@ -54,3 +54,15 @@ class AgentSmokeTests(unittest.TestCase):
         fen = "7k/5Q2/7K/8/8/8/8/8 b - - 0 1"
         with self.assertRaises(ValueError):
             agent.get_move(fen, 1_000)
+
+    def test_evaluation_rewards_material(self) -> None:
+        search = agent.Search(time.perf_counter() + 1.0)
+        equal = chess.Board("7k/8/8/8/8/8/8/K7 w - - 0 1")
+        extra_queen = chess.Board("7k/8/8/8/8/8/1Q6/K7 w - - 0 1")
+        self.assertGreater(search.evaluate(extra_queen), search.evaluate(equal))
+
+    def test_evaluation_rewards_passed_pawn(self) -> None:
+        search = agent.Search(time.perf_counter() + 1.0)
+        blocked = chess.Board("7k/8/8/3p4/4P3/8/8/K7 w - - 0 1")
+        passed = chess.Board("7k/8/8/8/4P3/8/7p/K7 w - - 0 1")
+        self.assertGreater(search.evaluate(passed), search.evaluate(blocked))
