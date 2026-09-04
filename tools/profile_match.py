@@ -16,8 +16,16 @@ from tools.tournament import update_ratings
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--agent", type=Path, default=Path("."))
-    parser.add_argument("--first", choices=("balanced", "conservative", "tactical", "endgame"), default="balanced")
-    parser.add_argument("--second", choices=("balanced", "conservative", "tactical", "endgame"), default="conservative")
+    parser.add_argument(
+        "--first",
+        choices=("balanced", "conservative", "tactical", "endgame"),
+        default="balanced",
+    )
+    parser.add_argument(
+        "--second",
+        choices=("balanced", "conservative", "tactical", "endgame"),
+        default="conservative",
+    )
     parser.add_argument("--games", type=int, default=100)
     parser.add_argument("--base-ms", type=int, default=10_000)
     parser.add_argument("--increment-ms", type=int, default=INCREMENT_MS)
@@ -35,11 +43,15 @@ def main() -> None:
     for number in range(arguments.games):
         first_white = number % 2 == 0
         white_profile, black_profile = (
-            (arguments.first, arguments.second) if first_white else (arguments.second, arguments.first)
+            (arguments.first, arguments.second)
+            if first_white
+            else (arguments.second, arguments.first)
         )
         white = MeasuredAgent(agent_path, white_profile)
         black = MeasuredAgent(agent_path, black_profile)
-        outcome = play_match(white, black, arguments.base_ms, arguments.increment_ms, arguments.ply_cap)
+        outcome = play_match(
+            white, black, arguments.base_ms, arguments.increment_ms, arguments.ply_cap
+        )
         terminations[outcome.termination] += 1
         stats[arguments.first]["games"] += 1
         stats[arguments.second]["games"] += 1

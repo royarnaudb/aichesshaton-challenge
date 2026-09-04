@@ -17,7 +17,9 @@ def expected(rating: float, opponent_rating: float) -> float:
     return 1.0 / (1.0 + 10.0 ** ((opponent_rating - rating) / 400.0))
 
 
-def update_ratings(ratings: dict[str, float], first: str, second: str, result: float, k: float) -> None:
+def update_ratings(
+    ratings: dict[str, float], first: str, second: str, result: float, k: float
+) -> None:
     first_expected = expected(ratings[first], ratings[second])
     change = k * (result - first_expected)
     ratings[first] += change
@@ -40,7 +42,9 @@ def main() -> None:
     parser.add_argument("--json-out", type=Path)
     parser.add_argument("--stockfish", type=Path, help="optional local Stockfish executable")
     arguments = parser.parse_args()
-    agents: dict[str, Path | None] = {str(path.resolve()): path.resolve() for path in arguments.agents}
+    agents: dict[str, Path | None] = {
+        str(path.resolve()): path.resolve() for path in arguments.agents
+    }
     if arguments.stockfish:
         stockfish = arguments.stockfish.resolve()
         agents[f"stockfish:{stockfish}"] = None
@@ -60,8 +64,16 @@ def main() -> None:
             for game in range(arguments.games_per_pair):
                 first_white = game % 2 == 0
                 white_name, black_name = (first, second) if first_white else (second, first)
-                white = StockfishAgent(arguments.stockfish) if agents[white_name] is None else MeasuredAgent(agents[white_name])
-                black = StockfishAgent(arguments.stockfish) if agents[black_name] is None else MeasuredAgent(agents[black_name])
+                white = (
+                    StockfishAgent(arguments.stockfish)
+                    if agents[white_name] is None
+                    else MeasuredAgent(agents[white_name])
+                )
+                black = (
+                    StockfishAgent(arguments.stockfish)
+                    if agents[black_name] is None
+                    else MeasuredAgent(agents[black_name])
+                )
                 outcome = play_match(
                     white,
                     black,
@@ -76,7 +88,10 @@ def main() -> None:
                 if outcome.result == "void":
                     records[first]["failed_games"] += 1
                     records[second]["failed_games"] += 1
-                    print(f"{display_name(agents[first], first)} vs {display_name(agents[second], second)}: void")
+                    print(
+                        f"{display_name(agents[first], first)} vs "
+                        f"{display_name(agents[second], second)}: void"
+                    )
                     continue
                 if outcome.result == "draw":
                     first_score = 0.5
@@ -92,7 +107,8 @@ def main() -> None:
                     records[second]["losses" if first_won else "wins"] += 1
                 update_ratings(ratings, first, second, first_score, arguments.k_factor)
                 print(
-                    f"{display_name(agents[first], first)} vs {display_name(agents[second], second)}: "
+                    f"{display_name(agents[first], first)} vs "
+                    f"{display_name(agents[second], second)}: "
                     f"{outcome.result} by {outcome.termination}"
                 )
 

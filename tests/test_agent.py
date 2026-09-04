@@ -3,8 +3,8 @@ from __future__ import annotations
 import sys
 import time
 import unittest
-from pathlib import Path
 from importlib import import_module
+from pathlib import Path
 
 import chess
 

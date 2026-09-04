@@ -15,7 +15,7 @@ from typing import Any
 
 from harness.referee import FAILED_TERMINATIONS, play_match
 from harness.rules import INCREMENT_MS, PLY_CAP
-from harness.sandbox import Agent, RUNNER
+from harness.sandbox import RUNNER, Agent
 
 METRIC_LINE = re.compile(r"METRIC (\{.*\})$")
 
