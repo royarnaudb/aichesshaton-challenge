@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+.mypy_cache/
+.ruff_cache/
+submission.zip
+*.pgn
+tools/stockfish-bin/
+metrics.json
+*.metrics.json
+pilot-*.json
+stockfish-smoke.json
+tournament.json
