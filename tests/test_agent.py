@@ -4,6 +4,7 @@ import sys
 import time
 import unittest
 from pathlib import Path
+from importlib import import_module
 
 import chess
 
@@ -11,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-import agent  # noqa: E402
+agent = import_module("agent")
 
 
 class AgentSmokeTests(unittest.TestCase):
