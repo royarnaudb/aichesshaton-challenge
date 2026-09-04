@@ -10,7 +10,7 @@ from pathlib import Path
 from harness.referee import FAILED_TERMINATIONS, play_match
 from harness.rules import INCREMENT_MS, PLY_CAP
 from tools.metrics import MeasuredAgent
-from tools.tournament import expected, update_ratings
+from tools.tournament import update_ratings
 
 
 def main() -> None:
